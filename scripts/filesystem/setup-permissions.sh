@@ -5,8 +5,56 @@
 
 set -e
 
-PATH_ARG=${1:-"."}
-MODE=${2:-""}
+# --- Configuration ---
+DRY_RUN=0
+
+# --- Help function ---
+show_help() {
+    echo "Usage: $0 [OPTIONS] <PATH> [MODE]"
+    echo ""
+    echo "Audit and fix file permissions."
+    echo ""
+    echo "Arguments:"
+    echo "  PATH    File or directory to check (default: current directory)"
+    echo "  MODE    Permission mode to set, e.g. 755, 644 (optional)"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message"
+    echo "  -n, --dry-run Show what would be done without doing it"
+    echo ""
+    echo "Examples:"
+    echo "  $0 /etc                 # Audit /etc permissions"
+    echo "  $0 /var/www 755         # Set permissions to 755"
+    echo "  $0 -n /tmp 777          # Preview without changing"
+    echo "  $0 -h                   # Show help"
+}
+
+# --- Parse arguments ---
+PATH_ARG=""
+MODE=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -n|--dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        *)
+            if [ -z "$PATH_ARG" ]; then
+                PATH_ARG="$1"
+            else
+                MODE="$1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Default to current directory
+PATH_ARG=${PATH_ARG:-"."}
 
 echo "====================================="
 echo " Permission Fixer: $PATH_ARG"
@@ -53,10 +101,14 @@ if [ -n "$MODE" ]; then
     echo ""
     echo "[4] FIXING PERMISSIONS"
     echo "-------------------------------------"
-    echo "Setting mode $MODE on $PATH_ARG"
-    chmod -R "$MODE" "$PATH_ARG"
-    echo "Done! New permissions:"
-    ls -la "$PATH_ARG" | head -5
+    if [ "$DRY_RUN" = 1 ]; then
+        echo "DRY-RUN: Would set mode $MODE on $PATH_ARG"
+    else
+        echo "Setting mode $MODE on $PATH_ARG"
+        chmod -R "$MODE" "$PATH_ARG"
+        echo "Done! New permissions:"
+        ls -la "$PATH_ARG" | head -5
+    fi
 else
     echo ""
     echo "[4] USAGE TIPS"
