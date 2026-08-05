@@ -5,6 +5,40 @@
 
 set -e
 
+# --- Help function ---
+show_help() {
+    echo "Usage: $0 [COMMAND] [OPTIONS]"
+    echo ""
+    echo "Process monitoring and management tool."
+    echo ""
+    echo "Commands:"
+    echo "  list          Show top processes by CPU/MEM (default)"
+    echo "  tree          Show process tree"
+    echo "  search NAME   Search for a process by name"
+    echo "  kill PID      Kill a process gracefully (SIGTERM then SIGKILL)"
+    echo "  services      List running systemd services"
+    echo "  failed        Show failed systemd services"
+    echo "  uptime        Show system uptime and CPU cores"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                     # Show top processes"
+    echo "  $0 search nginx        # Find nginx processes"
+    echo "  $0 kill 1234           # Kill process 1234"
+    echo "  $0 --help              # Show help"
+}
+
+# --- Parse arguments ---
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
+    exit 0
+fi
+
+ACTION=${1:-"list"}
+ARG=${2:-""}
+
 ACTION=${1:-"list"}
 ARG=${2:-""}
 
@@ -96,6 +130,9 @@ case "$ACTION" in
         echo "  services      List running services"
         echo "  failed        Show failed services"
         echo "  uptime        Show system uptime and load"
+        echo "Unknown command: $ACTION"
+        echo "Use '$0 --help' for usage"
+        exit 1
         ;;
 esac
 
