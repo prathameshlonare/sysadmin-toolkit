@@ -11,32 +11,6 @@ LOG_FILE="/var/log/service-monitor.log"
 ALERT_METHOD="${ALERT_METHOD:-log}"    # log, email, slack, all
 ALERT_EMAIL="${ALERT_EMAIL:-admin@example.com}"
 SLACK_WEBHOOK="${SLACK_WEBHOOK:-}"
-Add after the log() function (after line 51):
-send_alert() {
-    local message="$1"
-    local level="$2"  # INFO, WARN, CRITICAL
-
-    # Always log
-    log "$level: $message"
-
-    # Email alert for CRITICAL
-    if { [ "$ALERT_METHOD" = "email" ] || [ "$ALERT_METHOD" = "all" ]; }; then
-        if [ "$level" = "CRITICAL" ] && [ -n "$ALERT_EMAIL" ]; then
-            echo "$message" | mail -s "CRITICAL: Service Alert" "$ALERT_EMAIL" 2>/dev/null
-            log "Alert sent to $ALERT_EMAIL"
-        fi
-    fi
-
-    # Slack alert
-    if { [ "$ALERT_METHOD" = "slack" ] || [ "$ALERT_METHOD" = "all" ]; }; then
-        if [ -n "$SLACK_WEBHOOK" ]; then
-            curl -s -X POST -H 'Content-type: application/json' \
-                --data "{\"text\":\"$level: $message\"}" \
-                "$SLACK_WEBHOOK" 2>/dev/null
-            log "Alert sent to Slack"
-        fi
-    fi
-}
 
 # --- Help function ---
 show_help() {
@@ -79,6 +53,32 @@ done
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+send_alert() {
+    local message="$1"
+    local level="$2"  # INFO, WARN, CRITICAL
+
+    # Always log
+    log "$level: $message"
+
+    # Email alert for CRITICAL
+    if { [ "$ALERT_METHOD" = "email" ] || [ "$ALERT_METHOD" = "all" ]; }; then
+        if [ "$level" = "CRITICAL" ] && [ -n "$ALERT_EMAIL" ]; then
+            echo "$message" | mail -s "CRITICAL: Service Alert" "$ALERT_EMAIL" 2>/dev/null
+            log "Alert sent to $ALERT_EMAIL"
+        fi
+    fi
+
+    # Slack alert
+    if { [ "$ALERT_METHOD" = "slack" ] || [ "$ALERT_METHOD" = "all" ]; }; then
+        if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -s -X POST -H 'Content-type: application/json' \
+                --data "{\"text\":\"$level: $message\"}" \
+                "$SLACK_WEBHOOK" 2>/dev/null
+            log "Alert sent to Slack"
+        fi
+    fi
 }
 
 check_service() {
