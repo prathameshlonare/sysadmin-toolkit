@@ -7,6 +7,37 @@
 DRY_RUN=0
 LOG_FILE="/var/log/service-monitor.log"
 
+# --- Alert Configuration ---
+ALERT_METHOD="${ALERT_METHOD:-log}"    # log, email, slack, all
+ALERT_EMAIL="${ALERT_EMAIL:-admin@example.com}"
+SLACK_WEBHOOK="${SLACK_WEBHOOK:-}"
+Add after the log() function (after line 51):
+send_alert() {
+    local message="$1"
+    local level="$2"  # INFO, WARN, CRITICAL
+
+    # Always log
+    log "$level: $message"
+
+    # Email alert for CRITICAL
+    if { [ "$ALERT_METHOD" = "email" ] || [ "$ALERT_METHOD" = "all" ]; }; then
+        if [ "$level" = "CRITICAL" ] && [ -n "$ALERT_EMAIL" ]; then
+            echo "$message" | mail -s "CRITICAL: Service Alert" "$ALERT_EMAIL" 2>/dev/null
+            log "Alert sent to $ALERT_EMAIL"
+        fi
+    fi
+
+    # Slack alert
+    if { [ "$ALERT_METHOD" = "slack" ] || [ "$ALERT_METHOD" = "all" ]; }; then
+        if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -s -X POST -H 'Content-type: application/json' \
+                --data "{\"text\":\"$level: $message\"}" \
+                "$SLACK_WEBHOOK" 2>/dev/null
+            log "Alert sent to Slack"
+        fi
+    fi
+}
+
 # --- Help function ---
 show_help() {
     echo "Usage: sudo $0 [OPTIONS] [SERVICE1] [SERVICE2] ..."
@@ -67,7 +98,7 @@ check_service() {
             if [ "$new_status" = "active" ]; then
                 log "OK: $service restarted successfully."
             else
-                log "CRITICAL: $service restart failed. Status: $new_status"
+                send_alert "$service restart failed. Status: $new_status" "CRITICAL"
             fi
         fi
     elif [ "$status" = "active" ]; then
