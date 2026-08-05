@@ -5,6 +5,32 @@
 
 set -e
 
+# --- Help function ---
+show_help() {
+    echo "Usage: $0 [OPTIONS] [HOST] [PORT]"
+    echo ""
+    echo "Network diagnostic tool - checks connectivity to a host."
+    echo ""
+    echo "Arguments:"
+    echo "  HOST        Target hostname (default: google.com)"
+    echo "  PORT        Target port (default: 80)"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help  Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                      # Check google.com:80"
+    echo "  $0 example.com          # Check example.com:80"
+    echo "  $0 example.com 443      # Check example.com:443"
+    echo "  $0 -h                   # Show help"
+}
+
+# --- Parse arguments ---
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
+    exit 0
+fi
+
 HOST=${1:-"google.com"}
 PORT=${2:-"80"}
 
