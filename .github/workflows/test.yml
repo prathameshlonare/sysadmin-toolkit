@@ -1,0 +1,37 @@
+name: Test Scripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint all scripts
+        run: find scripts -name "*.sh" -exec shellcheck {} \;
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make scripts executable
+        run: chmod +x scripts/**/*.sh
+      - name: Test help flags
+        run: |
+          ./scripts/system/monitor-service.sh --help
+          ./scripts/network/network-check.sh --help
+          ./scripts/filesystem/setup-permissions.sh --help
+          ./scripts/process/process-manager.sh --help
+      - name: Test network-check.sh
+        run: ./scripts/network/network-check.sh google.com 80
+      - name: Test process-manager.sh
+        run: ./scripts/process/process-manager.sh list
